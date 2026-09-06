@@ -1,0 +1,135 @@
+// Prisma schema for the restaurant pre-order SaaS.
+//
+// IMPORTANT (see plan Section 5): Prisma's default connection uses a
+// service-role/superuser role, which BYPASSES Postgres Row Level Security.
+// The RLS policies you write in Supabase for these tenant-scoped tables
+// (Restaurant, MealSlot, TableLocation, MenuCategory, MenuItem, Order) are a
+// real second layer of defense ONLY if the connection path respects them -
+// e.g. by setting `SET app.current_restaurant_id = ...` per request, or by
+// routing client-facing reads through a scoped Supabase JWT instead of this
+// Prisma client. Don't treat RLS as done just because policies exist.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  RECEIVED
+  PREPARING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  COUNTER
+  ONLINE
+}
+
+model Restaurant {
+  id         String   @id @default(cuid())
+  name       String
+  slug       String   @unique
+  timezone   String   @default("Asia/Kolkata")
+  createdAt  DateTime @default(now())
+
+  mealSlots  MealSlot[]
+  categories MenuCategory[]
+  tables     TableLocation[]
+  orders     Order[]
+}
+
+model MealSlot {
+  id             String   @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id])
+  name           String   // "breakfast" | "lunch" | "dinner"
+  startTime      String   // "07:00"
+  endTime        String   // "10:00"
+  cutoffMinutes  Int      @default(60)
+
+  orders         Order[]
+
+  @@index([restaurantId])
+}
+
+model TableLocation {
+  id           String   @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  label        String   // "Table 4" / "Room 212"
+  qrCodeValue  String   @unique
+
+  orders       Order[]
+
+  @@index([restaurantId])
+}
+
+model MenuCategory {
+  id           String   @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  name         String
+  sortOrder    Int      @default(0)
+
+  items        MenuItem[]
+
+  @@index([restaurantId])
+}
+
+model MenuItem {
+  id           String   @id @default(cuid())
+  categoryId   String
+  category     MenuCategory @relation(fields: [categoryId], references: [id])
+  name         String
+  description  String?
+  price        Decimal  @db.Decimal(10, 2)
+  isAvailable  Boolean  @default(true)
+  imageUrl     String?
+
+  orderItems   OrderItem[]
+
+  @@index([categoryId])
+}
+
+model Order {
+  id             String        @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant    @relation(fields: [restaurantId], references: [id])
+  mealSlotId     String
+  mealSlot       MealSlot      @relation(fields: [mealSlotId], references: [id])
+  tableId        String
+  table          TableLocation @relation(fields: [tableId], references: [id])
+
+  customerName   String
+  phone          String
+  addressOrFlat  String
+
+  status         OrderStatus   @default(RECEIVED)
+  paymentMethod  PaymentMethod @default(COUNTER)
+
+  createdAt      DateTime      @default(now())
+
+  items          OrderItem[]
+
+  @@index([restaurantId, mealSlotId, status])
+}
+
+model OrderItem {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id])
+  menuItemId    String
+  menuItem      MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity      Int
+  priceAtOrder  Decimal  @db.Decimal(10, 2)
+
+  @@index([orderId])
+}
