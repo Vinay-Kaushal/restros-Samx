@@ -67,6 +67,21 @@ export function attachWebSocketServer(server: HttpServer) {
 
     joinRoom(restaurantId, socket);
 
+    // Inbound messages - currently just the waiting-lounge trivia score
+    // broadcast. Re-publishing through Redis (not sending directly) keeps
+    // this consistent across multiple API instances, same as every other
+    // event in this file.
+    socket.on("message", (raw) => {
+      try {
+        const message = JSON.parse(raw.toString());
+        if (message.type === "lounge:score" && message.restaurantId === restaurantId) {
+          redisPubPublish(restaurantId, message);
+        }
+      } catch {
+        // Ignore malformed client messages rather than crashing the connection.
+      }
+    });
+
     socket.on("close", () => leaveRoom(restaurantId, socket));
   });
 

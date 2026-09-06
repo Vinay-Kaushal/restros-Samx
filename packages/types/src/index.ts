@@ -116,4 +116,22 @@ export interface OrderStatusChangedEvent {
 export type RealtimeEvent =
   | DemandUpdateEvent
   | NewOrderEvent
-  | OrderStatusChangedEvent;
+  | OrderStatusChangedEvent
+  | LoungeScoreEvent;
+
+// ---- Waiting Lounge (Section 11) ----
+
+export interface LoungeScoreEvent {
+  type: "lounge:score";
+  restaurantId: string;
+  mealSlotId: string;
+  name: string;
+  score: number;
+}
+
+export interface TriviaQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctIndex: number;
+}

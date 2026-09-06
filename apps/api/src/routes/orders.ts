@@ -7,6 +7,16 @@ import type { NewOrderEvent, DemandUpdateEvent } from "@repo/types";
 
 export const ordersRouter = Router();
 
+// GET /api/r/:slug/orders/:orderId - used by the customer's waiting-lounge
+// page to know which restaurant/meal-slot room to join for live updates,
+// and to show the current status on first load before any WS event arrives.
+ordersRouter.get("/r/:slug/orders/:orderId", async (req, res) => {
+  const { orderId } = req.params;
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  res.json({ order });
+});
+
 // GET /api/r/:slug/orders - initial state for the admin live dashboard.
 // The dashboard loads this once on mount, then relies on the WebSocket
 // (order:new / order:status_changed) to stay current after that.

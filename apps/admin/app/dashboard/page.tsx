@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Order, OrderStatus } from "@repo/types";
 import { StatusPill, Button } from "@repo/ui";
 import { fetchOrders, updateOrderStatus } from "@/lib/api";
@@ -22,16 +22,48 @@ export default function DashboardPage() {
   const [restaurantId, setRestaurantId] = useState<string>();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<OrderStatus | "ALL">("ALL");
+  const [toast, setToast] = useState<string | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     fetchOrders(RESTAURANT_SLUG).then((data) => {
       setRestaurantId(data.restaurant.id);
       setOrders(data.orders);
     });
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
   }, []);
 
+  function playChime() {
+    // A short synthesized beep - no audio file to host, works the moment
+    // the page has had one user interaction (browser autoplay rules).
+    try {
+      audioCtxRef.current ??= new AudioContext();
+      const ctx = audioCtxRef.current;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
+    } catch {
+      // Ignore - some browsers block audio before any user gesture at all.
+    }
+  }
+
   useAdminSocket(restaurantId, {
-    onNewOrder: (order) => setOrders((prev) => [order, ...prev]),
+    onNewOrder: (order) => {
+      setOrders((prev) => [order, ...prev]);
+      playChime();
+      setToast(`New order from ${order.customerName}`);
+      setTimeout(() => setToast(null), 5000);
+      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+        new Notification("New order", { body: `${order.customerName} just placed an order` });
+      }
+    },
     onStatusChanged: (orderId, status) =>
       setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)))
   });
@@ -50,8 +82,21 @@ export default function DashboardPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
-      <h1 className="mb-1 text-xl font-semibold text-ink-900">Live orders</h1>
-      <p className="mb-6 text-sm text-ink-400">Updates as orders come in - no need to refresh.</p>
+      {toast && (
+        <div className="fixed right-6 top-6 rounded-card bg-ink-900 px-4 py-3 text-sm text-ink-50 shadow-lg">
+          {toast}
+        </div>
+      )}
+
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="mb-1 text-xl font-semibold text-ink-900">Live orders</h1>
+          <p className="text-sm text-ink-400">Updates as orders come in - no need to refresh.</p>
+        </div>
+        <a href="/dashboard/stats" className="text-sm font-medium text-chili-600">
+          View stats →
+        </a>
+      </div>
 
       <div className="mb-4 flex gap-2">
         {STATUS_FILTERS.map((s) => (

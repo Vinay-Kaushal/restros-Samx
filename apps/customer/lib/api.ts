@@ -30,3 +30,14 @@ export async function submitOrder(slug: string, payload: unknown) {
   }
   return res.json();
 }
+
+export async function createPayment(slug: string, orderId: string) {
+  const res = await fetch(`${API_BASE}/api/r/${slug}/orders/${orderId}/create-payment`, {
+    method: "POST"
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? "Failed to start payment");
+  }
+  return res.json();
+}

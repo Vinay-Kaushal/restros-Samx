@@ -15,3 +15,10 @@ export async function updateOrderStatus(slug: string, orderId: string, status: s
   if (!res.ok) throw new Error("Failed to update order");
   return res.json();
 }
+
+export async function fetchStats(slug: string) {
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+  const res = await fetch(`${API_BASE}/api/r/${slug}/stats`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load stats");
+  return res.json();
+}
