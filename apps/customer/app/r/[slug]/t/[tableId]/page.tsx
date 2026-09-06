@@ -8,6 +8,14 @@ import { useCart } from "@/lib/useCart";
 import { MenuItemCard } from "@/components/MenuItemCard";
 import { Button } from "@repo/ui";
 
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      [elemName: string]: any;
+    }
+  }
+}
+
 interface MenuData {
   restaurant: { id: string; name: string };
   categories: {
