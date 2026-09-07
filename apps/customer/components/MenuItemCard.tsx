@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { DemandBadge, Button } from "@repo/ui";
 
 interface Props {
@@ -14,7 +15,7 @@ interface Props {
 
 export function MenuItemCard({ name, description, price, isAvailable, demandCount, onAdd }: Props) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-ink-100 py-4">
+    <div className="flex items-start justify-between gap-4 border-b border-ink-100 py-4 transition-colors hover:bg-ink-100/40">
       <div className="min-w-0">
         <h3 className="text-base font-display font-medium text-ink-900">{name}</h3>
         {description && <p className="mt-0.5 text-sm text-ink-400">{description}</p>}
@@ -23,9 +24,11 @@ export function MenuItemCard({ name, description, price, isAvailable, demandCoun
           <DemandBadge count={demandCount} />
         </div>
       </div>
-      <Button variant={isAvailable ? "primary" : "ghost"} disabled={!isAvailable} onClick={onAdd}>
-        {isAvailable ? "Add" : "Sold out"}
-      </Button>
+      <motion.div whileTap={isAvailable ? { scale: 0.94 } : undefined}>
+        <Button variant={isAvailable ? "primary" : "ghost"} disabled={!isAvailable} onClick={onAdd}>
+          {isAvailable ? "Add" : "Sold out"}
+        </Button>
+      </motion.div>
     </div>
   );
 }

@@ -56,7 +56,7 @@ ordersRouter.patch("/r/:slug/orders/:orderId/status", async (req, res) => {
 });
 
 const createOrderSchema = z.object({
-  tableId: z.string(),
+  tableId: z.string().optional(),
   mealSlotId: z.string(),
   customerName: z.string().min(1),
   phone: z.string().min(6),

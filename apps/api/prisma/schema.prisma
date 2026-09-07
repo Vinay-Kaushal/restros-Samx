@@ -105,8 +105,14 @@ model Order {
   restaurant     Restaurant    @relation(fields: [restaurantId], references: [id])
   mealSlotId     String
   mealSlot       MealSlot      @relation(fields: [mealSlotId], references: [id])
-  tableId        String
-  table          TableLocation @relation(fields: [tableId], references: [id])
+
+  // Optional: only meaningful for a business with multiple physical
+  // locations sharing one restaurant record, or genuine per-table dine-in.
+  // Most QR-scan-to-delivery setups (one QR per wall/notice board, delivery
+  // to whatever address the customer types in) have no use for this - the
+  // customer's own addressOrFlat field below is the actual delivery target.
+  tableId        String?
+  table          TableLocation? @relation(fields: [tableId], references: [id])
 
   customerName   String
   phone          String

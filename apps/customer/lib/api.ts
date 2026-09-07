@@ -1,5 +1,11 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
+export async function fetchBootstrap(slug: string) {
+  const res = await fetch(`${API_BASE}/api/r/${slug}/bootstrap`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load restaurant");
+  return res.json();
+}
+
 export async function fetchMenu(slug: string, mealSlotId?: string) {
   const url = new URL(`${API_BASE}/api/r/${slug}/menu`);
   if (mealSlotId) url.searchParams.set("mealSlotId", mealSlotId);
@@ -16,6 +22,13 @@ export async function fetchCurrentMealSlot(slug: string) {
   if (!res.ok) throw new Error("Failed to load meal slots");
   const { mealSlots } = await res.json();
   return mealSlots[0] as { id: string; name: string } | undefined;
+}
+
+export async function fetchMealSlots(slug: string) {
+  const res = await fetch(`${API_BASE}/api/r/${slug}/meal-slots`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load meal slots");
+  const { mealSlots } = await res.json();
+  return mealSlots;
 }
 
 export async function submitOrder(slug: string, payload: unknown) {

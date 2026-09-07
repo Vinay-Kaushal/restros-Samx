@@ -1,10 +1,11 @@
+import { redirect } from "next/navigation";
+
+// A bare domain visit has no restaurant/table context to show a menu for -
+// in real usage nobody ever lands here anyway, since a QR code encodes the
+// full /r/[slug] URL directly. This redirect just makes local testing (and
+// a single-restaurant deployment where the whole domain IS one restaurant)
+// go straight to the actual page instead of showing a dead placeholder screen.
 export default function HomePage() {
-  return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center px-6 text-center">
-      <h1 className="mb-2 text-2xl font-semibold text-ink-900">Scan to order</h1>
-      <p className="text-ink-400">
-        Find the QR code at your table and scan it with your phone's camera to see the menu and place your order.
-      </p>
-    </main>
-  );
+  const slug = process.env.NEXT_PUBLIC_DEMO_RESTAURANT_SLUG ?? "demo-restaurant";
+  redirect(`/r/${slug}`);
 }
