@@ -11,6 +11,10 @@ export const paymentsRouter = Router();
 // the actual Razorpay order server-side (never trust a client-supplied
 // amount) and hands back what the frontend needs to open the checkout widget.
 paymentsRouter.post("/r/:slug/orders/:orderId/create-payment", async (req, res) => {
+  if (!razorpay) {
+    return res.status(503).json({ error: "Online payment isn't configured on this server yet" });
+  }
+
   const { orderId } = req.params;
 
   const order = await prisma.order.findUnique({

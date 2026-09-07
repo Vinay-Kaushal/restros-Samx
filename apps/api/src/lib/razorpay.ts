@@ -1,10 +1,13 @@
 import Razorpay from "razorpay";
 import crypto from "crypto";
 
-export const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID ?? "",
-  key_secret: process.env.RAZORPAY_KEY_SECRET ?? ""
-});
+export const razorpay =
+  process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
+    ? new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID,
+        key_secret: process.env.RAZORPAY_KEY_SECRET
+      })
+    : null;
 
 // Verifies the webhook came from Razorpay, not someone spoofing a
 // "payment succeeded" request at your endpoint. This signature check is
