@@ -14,4 +14,10 @@ export async function scheduleRecurringJobs() {
     {},
     { repeat: { every: 60_000 }, removeOnComplete: true, removeOnFail: true }
   );
+
+  await schedulerQueue.add(
+    "expire-stale-pending-payments",
+    {},
+    { repeat: { every: 60_000 }, removeOnComplete: true, removeOnFail: true }
+  );
 }

@@ -1,6 +1,10 @@
 import Razorpay from "razorpay";
 import crypto from "crypto";
 
+// Lazy/guarded initialization - an unconfigured Razorpay (no keys set yet)
+// must never crash the whole API on startup. It should only fail when
+// someone actually tries to use the online-payment path, with a clear error,
+// not take down order browsing/pay-at-counter along with it.
 export const razorpay =
   process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
     ? new Razorpay({
