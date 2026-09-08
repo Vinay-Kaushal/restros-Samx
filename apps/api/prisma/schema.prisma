@@ -33,6 +33,18 @@ enum PaymentMethod {
   ONLINE
 }
 
+enum PaymentStatus {
+  CREATED
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  RAZORPAY
+}
+
 model Restaurant {
   id         String   @id @default(cuid())
   name       String
@@ -124,6 +136,7 @@ model Order {
   createdAt      DateTime      @default(now())
 
   items          OrderItem[]
+  payment        Payment?
 
   @@index([restaurantId, mealSlotId, status])
 }
@@ -138,4 +151,38 @@ model OrderItem {
   priceAtOrder  Decimal  @db.Decimal(10, 2)
 
   @@index([orderId])
+}
+
+
+model Payment {
+  id                 String          @id @default(cuid())
+  orderId            String          @unique
+  order              Order           @relation(fields: [orderId], references: [id])
+
+  provider           PaymentProvider
+  status             PaymentStatus   @default(CREATED)
+
+  providerOrderId    String          @unique
+  providerPaymentId  String?         @unique
+
+  amount             Int
+  currency           String          @default("INR")
+
+  failureCode        String?
+  failureDescription String?
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([providerOrderId])
+}
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  provider    String
+  eventId     String
+  eventType   String
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([provider, eventId])
 }

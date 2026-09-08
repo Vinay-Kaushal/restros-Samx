@@ -10,6 +10,7 @@ import { MenuItemCard } from "@/components/MenuItemCard";
 import { MenuSkeleton } from "@/components/MenuSkeleton";
 import { Footer } from "@/components/Footer";
 import { Logo } from "@/components/Logo";
+import { CartCta } from "@/components/CartCta";
 import { Button } from "@repo/ui";
 
 interface MealSlot {
@@ -81,14 +82,18 @@ export default function MenuPage({ params }: { params: { slug: string } }) {
 
   return (
     <div className="min-h-screen bg-ink-50">
-      {/* Thin top nav - the "this is a real website" signal a bare hero
-          doesn't give you on its own. */}
+      {/* Thin top nav - logo left, anchor links right that scroll straight
+          down to their matching section in the footer. */}
       <div className="flex items-center justify-between border-b border-ink-100/10 bg-ink-900 px-6 py-3 text-ink-50">
         <div className="flex items-center gap-2">
           <Logo size={18} />
           <span className="text-sm font-medium tracking-wide">TheVisionForged</span>
         </div>
-        <span className="text-xs text-ink-100/60">{menu.restaurant.name}</span>
+        <nav className="flex gap-5 text-xs text-ink-100/70">
+          <a href="#about" className="transition-colors hover:text-ink-50">About Us</a>
+          <a href="#help" className="transition-colors hover:text-ink-50">Help</a>
+          <a href="#contact" className="transition-colors hover:text-ink-50">Contact</a>
+        </nav>
       </div>
 
       {/* Full-bleed hero - fills the viewport width instead of being boxed
@@ -113,12 +118,13 @@ export default function MenuPage({ params }: { params: { slug: string } }) {
           <p className="mt-3 text-base text-ink-100/70">
             Fresh, made-to-order meals — ready the moment you arrive. No waiting in line.
           </p>
+          <CartCta />
         </div>
       </motion.header>
 
       {/* Content sits in a wider column than before, with the meal-slot tabs
           and menu grid actually using the extra space on tablet/desktop. */}
-      <main className="mx-auto max-w-3xl px-6 pb-28 pt-6">
+      <main id="menu" className="mx-auto max-w-3xl px-6 pb-28 pt-6 scroll-mt-16">
         <nav className="sticky top-0 z-10 -mx-6 mb-6 flex gap-2 border-b border-ink-100 bg-ink-50/95 px-6 py-3 backdrop-blur">
           {mealSlots.map((slot) => {
             const open = isSlotOpen(slot);

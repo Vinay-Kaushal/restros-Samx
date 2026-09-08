@@ -52,15 +52,46 @@ export default function CheckoutPage({ params }: { params: { slug: string } }) {
         order_id: payment.razorpayOrderId,
         name: "Order payment",
         prefill: { name: form.customerName, contact: form.phone },
-        handler: () => {
-          // This fires on the client the instant payment appears to
-          // succeed - but it's the webhook, not this callback, that
-          // actually confirms the order. We just navigate to the waiting
-          // page, which shows "waiting for payment" until the webhook
-          // updates the status over the WebSocket.
-          cart.clear();
-          router.push(`/r/${slug}/confirmation?orderId=${order.id}`);
+        
+        handler: async (response: {
+        razorpay_payment_id: string;
+        razorpay_order_id: string;
+        razorpay_signature: string;
+        }) => {
+        try {
+         const verifyResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/r/${slug}/orders/${order.id}/verify-payment`,
+        {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          razorpayPaymentId: response.razorpay_payment_id,
+          razorpayOrderId: response.razorpay_order_id,
+          razorpaySignature: response.razorpay_signature,
+        }),
+       },
+      );
+
+      const result = await verifyResponse.json();
+
+      if (!verifyResponse.ok || !result.verified) {
+      throw new Error(result.error ?? "Payment verification failed");
+      }
+
+      clearCart();
+      router.push(`/r/${slug}/confirmation?orderId=${order.id}`);
+      } catch (error) {
+      console.error("Payment verification failed:", error);
+
+      alert(
+      error instanceof Error
+        ? error.message
+        : "Payment verification failed. Please try again.",
+      );
+      }
+       },
         modal: {
           ondismiss: () => setSubmitting(false)
         }

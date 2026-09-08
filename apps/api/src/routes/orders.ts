@@ -153,7 +153,7 @@ async function incrementDemand(
 
 function isPastCutoff(mealSlot: { endTime: string; cutoffMinutes: number }): boolean {
   const now = new Date();
-  const [endHour, endMinute] = mealSlot.endTime.split(":").map(Number);
+  const [endHour=0, endMinute=0] = mealSlot.endTime.split(":").map(Number);
   const slotEnd = new Date(now);
   slotEnd.setHours(endHour, endMinute, 0, 0);
   const cutoff = new Date(slotEnd.getTime() - mealSlot.cutoffMinutes * 60_000);

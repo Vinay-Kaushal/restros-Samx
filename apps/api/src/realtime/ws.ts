@@ -34,6 +34,7 @@ function ensureSubscribed(restaurantId: string) {
 // this one subscription.
 redisSub.on("message", (channel, message) => {
   const restaurantId = channel.split(":")[1];
+  if (!restaurantId) return;
   const room = rooms.get(restaurantId);
   if (!room) return;
   for (const socket of room) {
