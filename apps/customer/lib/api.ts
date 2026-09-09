@@ -54,3 +54,7 @@ export async function createPayment(slug: string, orderId: string) {
   }
   return res.json();
 }
+
+export async function devConfirmPayment(slug: string, orderId: string) {
+  await fetch(`${API_BASE}/api/r/${slug}/orders/${orderId}/dev-confirm-payment`, { method: "POST" });
+}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { StatusPill } from "@repo/ui";
+import { OrderTimeline } from "@/components/OrderTimeline";
 import { TriviaWidget } from "@/components/TriviaWidget";
 import type { Order, OrderStatus } from "@repo/types";
 
@@ -33,20 +33,25 @@ export default function ConfirmationPage({ params }: { params: { slug: string } 
     return () => ws.close();
   }, [order?.id, order?.restaurantId]);
 
-  return (
-    <main className="mx-auto max-w-lg px-4 py-16 text-center">
-      <h1 className="mb-2 text-2xl font-semibold text-ink-900">
-        {order?.status === "PENDING_PAYMENT" ? "Waiting for payment…" : "Order placed"}
-      </h1>
-      <p className="mb-4 text-ink-400">
-        {order?.status === "PENDING_PAYMENT"
-          ? "This updates automatically once payment is confirmed."
-          : "The kitchen has your order. This updates automatically as it's prepared."}
-      </p>
+  const waitingForPayment = order?.status === "PENDING_PAYMENT";
 
-      {order && (
-        <div className="mb-2 flex justify-center">
-          <StatusPill status={order.status} />
+  return (
+    <main className="mx-auto max-w-lg px-6 py-16">
+      <div className="text-center">
+        <h1 className="mb-2 text-2xl font-display font-semibold text-ink-900">
+          {waitingForPayment ? "Order placed" : "Order Confirmed!"}
+        </h1>
+        <p className="mb-8 text-ink-400">
+          {waitingForPayment
+            ? "We've got your order — this updates automatically the moment your payment is confirmed."
+            : "Your feast is being prepared by our chefs."}
+        </p>
+      </div>
+
+      {order && !waitingForPayment && order.status !== "CANCELLED" && (
+        <div className="mb-8 rounded-card border border-ink-100 p-5">
+          <p className="mb-4 text-sm font-medium text-ink-700">Preparation Status</p>
+          <OrderTimeline status={order.status} />
         </div>
       )}
 

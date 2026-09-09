@@ -31,8 +31,8 @@ interface MenuData {
 }
 
 function timeToMinutes(t: string) {
-  const [h, m] = t.split(":").map(Number);
-  return h * 60 + m;
+  const parts = t.split(":").map(Number);
+  return (parts[0] ?? 0) * 60 + (parts[1] ?? 0);
 }
 
 function isSlotOpen(slot: MealSlot) {
@@ -51,6 +51,7 @@ export default function MenuPage({ params }: { params: { slug: string } }) {
   const [menu, setMenu] = useState<MenuData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const cart = useCart(slug);
+  const [search, setSearch] = useState("");
 
   // Single request on first load - restaurant, meal slots, and the current
   // slot's menu all arrive together instead of two sequential round trips.
@@ -77,7 +78,14 @@ export default function MenuPage({ params }: { params: { slug: string } }) {
   if (!menu || !mealSlots.length) return <MenuSkeleton />;
 
   const activeSlot = mealSlots.find((s) => s.id === activeSlotId)!;
-  const activeSlotOpen = isSlotOpen(activeSlot);
+  // DEV-ONLY escape hatch: NEXT_PUBLIC_DEV_DISABLE_ORDER_RESTRICTIONS lets you
+  // test checkout without fighting real-world meal-slot timing or stock
+  // toggles while building. Must be unset (or false) before any real
+  // deployment - the backend has its own matching guard on the cutoff check,
+  // but "item marked sold out" is a real business toggle the backend always
+  // still enforces regardless of this flag, so don't rely on this alone.
+  const devBypass = process.env.NEXT_PUBLIC_DEV_DISABLE_ORDER_RESTRICTIONS === "true";
+  const activeSlotOpen = devBypass || isSlotOpen(activeSlot);
   const allSoldOut = menu.categories.every((c) => c.items.every((i) => !i.isAvailable));
 
   return (
@@ -106,11 +114,11 @@ export default function MenuPage({ params }: { params: { slug: string } }) {
       >
         <div
           className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full opacity-25 blur-3xl"
-          style={{ background: "radial-gradient(circle, #E3A008, transparent 70%)" }}
+          style={{ background: "radial-gradient(circle, var(--color-turmeric-400), transparent 70%)" }}
         />
         <div
           className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full opacity-20 blur-3xl"
-          style={{ background: "radial-gradient(circle, #C1451F, transparent 70%)" }}
+          style={{ background: "radial-gradient(circle, var(--color-chili-400), transparent 70%)" }}
         />
         <div className="relative mx-auto max-w-3xl text-center">
           <p className="mb-3 text-xs uppercase tracking-[0.2em] text-turmeric-400">Order ahead</p>
@@ -148,6 +156,13 @@ export default function MenuPage({ params }: { params: { slug: string } }) {
           })}
         </nav>
 
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search the menu…"
+          className="mb-4 w-full rounded-full border border-ink-100 bg-ink-50 px-4 py-2 text-sm placeholder:text-ink-400 focus:border-turmeric-400 focus:outline-none"
+        />
+
         {!activeSlotOpen && (
           <p className="mb-6 rounded-card bg-ink-100 px-4 py-3 text-sm text-ink-700">
             {activeSlot.name} ordering runs {activeSlot.startTime}–{activeSlot.endTime}. You can browse the menu now,
@@ -162,7 +177,13 @@ export default function MenuPage({ params }: { params: { slug: string } }) {
 
         <AnimatePresence mode="wait">
           <motion.div key={activeSlotId} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
-            {menu.categories.map((category) => (
+            {menu.categories
+              .map((category) => ({
+                ...category,
+                items: category.items.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()))
+              }))
+              .filter((category) => category.items.length > 0)
+              .map((category) => (
               <section key={category.id} className="mb-8">
                 <h2 className="mb-2 text-xl font-display font-medium text-ink-700">{category.name}</h2>
                 <div className="grid gap-x-8 sm:grid-cols-2">
@@ -180,7 +201,9 @@ export default function MenuPage({ params }: { params: { slug: string } }) {
                         price={item.price}
                         isAvailable={item.isAvailable && activeSlotOpen}
                         demandCount={demand[item.id] ?? item.demandCount}
+                        quantity={cart.lines.find((l) => l.menuItemId === item.id)?.quantity ?? 0}
                         onAdd={() => cart.addItem({ menuItemId: item.id, name: item.name, price: item.price })}
+                        onQuantityChange={(q) => cart.setQuantity(item.id, q)}
                       />
                     </motion.div>
                   ))}
@@ -207,7 +230,7 @@ export default function MenuPage({ params }: { params: { slug: string } }) {
                 <p className="text-sm text-ink-400">{cart.lines.length} item(s)</p>
                 <p className="text-base font-medium text-ink-900">₹{cart.total.toFixed(2)}</p>
               </div>
-              <Button onClick={() => router.push(`/r/${slug}/checkout`)}>Review order</Button>
+              <Button onClick={() => router.push(`/r/${slug}/cart`)}>Review order</Button>
             </div>
           </motion.div>
         )}

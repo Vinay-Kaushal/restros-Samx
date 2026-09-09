@@ -66,6 +66,8 @@ export interface CreateOrderInput {
   phone: string;
   addressOrFlat: string;
   paymentMethod: PaymentMethod;
+  specialInstructions?: string;
+  tipAmount?: number;
   items: OrderItemInput[];
 }
 
@@ -74,18 +76,21 @@ export interface OrderItem {
   menuItemId: string;
   quantity: number;
   priceAtOrder: number;
+  menuItem?: { name: string };
 }
 
 export interface Order {
   id: string;
   restaurantId: string;
   mealSlotId: string;
-  tableId: string;
+  tableId?: string;
   customerName: string;
   phone: string;
   addressOrFlat: string;
   status: OrderStatus;
   paymentMethod: PaymentMethod;
+  specialInstructions?: string;
+  tipAmount: number;
   createdAt: string;
   items: OrderItem[];
 }

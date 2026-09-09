@@ -62,6 +62,8 @@ const createOrderSchema = z.object({
   phone: z.string().min(6),
   addressOrFlat: z.string().min(1),
   paymentMethod: z.enum(["COUNTER", "ONLINE"]),
+  specialInstructions: z.string().max(500).optional(),
+  tipAmount: z.number().min(0).max(2000).default(0),
   items: z.array(z.object({ menuItemId: z.string(), quantity: z.number().int().positive() })).min(1)
 });
 
@@ -84,7 +86,10 @@ ordersRouter.post("/r/:slug/orders", async (req, res) => {
   if (!mealSlot) return res.status(404).json({ error: "Meal slot not found" });
 
   // Server-side cutoff check - never trust the client's clock (plan Section 3).
-  if (isPastCutoff(mealSlot)) {
+  // DEV_DISABLE_ORDER_RESTRICTIONS is a temporary escape hatch for local
+  // development ONLY - it must never be set in a deployed environment, since
+  // it turns off the exact protection this comment is describing.
+  if (process.env.DEV_DISABLE_ORDER_RESTRICTIONS !== "true" && isPastCutoff(mealSlot)) {
     return res.status(409).json({ error: "Ordering has closed for this meal slot" });
   }
 
@@ -93,6 +98,16 @@ ordersRouter.post("/r/:slug/orders", async (req, res) => {
   });
   if (menuItems.length !== parsed.data.items.length) {
     return res.status(400).json({ error: "One or more items are invalid" });
+  }
+
+  // This was missing entirely before - the frontend disabled the Add button
+  // for sold-out items, but nothing stopped a direct API call from ordering
+  // one anyway. Unlike the cutoff check above, this ISN'T gated by the dev
+  // bypass flag - marking an item sold out is a real business decision the
+  // API should always respect, in every environment.
+  const unavailable = menuItems.filter((item) => !item.isAvailable);
+  if (unavailable.length > 0) {
+    return res.status(409).json({ error: `${unavailable.map((i) => i.name).join(", ")} - no longer available` });
   }
 
   const status = parsed.data.paymentMethod === "ONLINE" ? "PENDING_PAYMENT" : "RECEIVED";
@@ -106,6 +121,8 @@ ordersRouter.post("/r/:slug/orders", async (req, res) => {
       phone: parsed.data.phone,
       addressOrFlat: parsed.data.addressOrFlat,
       paymentMethod: parsed.data.paymentMethod,
+      specialInstructions: parsed.data.specialInstructions,
+      tipAmount: parsed.data.tipAmount,
       status,
       items: {
         create: parsed.data.items.map((item) => {
@@ -114,7 +131,7 @@ ordersRouter.post("/r/:slug/orders", async (req, res) => {
         })
       }
     },
-    include: { items: true }
+    include: { items: { include: { menuItem: true } } }
   });
 
   // Only increment the live demand counters once the order is actually
@@ -153,7 +170,9 @@ async function incrementDemand(
 
 function isPastCutoff(mealSlot: { endTime: string; cutoffMinutes: number }): boolean {
   const now = new Date();
-  const [endHour=0, endMinute=0] = mealSlot.endTime.split(":").map(Number);
+  const timeParts = mealSlot.endTime.split(":").map(Number);
+  const endHour = timeParts[0] ?? 0;
+  const endMinute = timeParts[1] ?? 0;
   const slotEnd = new Date(now);
   slotEnd.setHours(endHour, endMinute, 0, 0);
   const cutoff = new Date(slotEnd.getTime() - mealSlot.cutoffMinutes * 60_000);

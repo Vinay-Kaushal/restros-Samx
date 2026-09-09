@@ -18,11 +18,9 @@ menuRouter.get("/r/:slug/bootstrap", async (req, res) => {
   if (mealSlots.length === 0) return res.status(404).json({ error: "No meal slots configured" });
 
   function timeToMinutes(t: string) {
-  const [h = 0, m = 0] = t.split(":").map(Number);
-
-  return h * 60 + m;
+    const parts = t.split(":").map(Number);
+    return (parts[0] ?? 0) * 60 + (parts[1] ?? 0);
   }
-
   function isSlotOpen(slot: (typeof mealSlots)[number]) {
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
@@ -31,7 +29,8 @@ menuRouter.get("/r/:slug/bootstrap", async (req, res) => {
     return nowMinutes >= start && nowMinutes < end;
   }
 
-  const activeSlot = mealSlots.find(isSlotOpen) ?? mealSlots[0]!;
+  const activeSlot = mealSlots.find(isSlotOpen) ?? mealSlots[0];
+  if (!activeSlot) return res.status(404).json({ error: "No meal slots configured" });
 
   const categories = await prisma.menuCategory.findMany({
     where: { restaurantId: restaurant.id },

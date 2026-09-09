@@ -10,7 +10,7 @@ import { useAdminSocket } from "@/lib/useAdminSocket";
 // is wired up. Read from an env var for now so this is runnable standalone.
 const RESTAURANT_SLUG = process.env.NEXT_PUBLIC_DEMO_RESTAURANT_SLUG ?? "demo-restaurant";
 
-const STATUS_FILTERS: (OrderStatus | "ALL")[] = ["ALL", "RECEIVED", "PREPARING", "READY", "DELIVERED"];
+const STATUS_FILTERS: (OrderStatus | "ALL")[] = ["ALL", "PENDING_PAYMENT", "RECEIVED", "PREPARING", "READY", "DELIVERED"];
 
 const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
   RECEIVED: "PREPARING",
@@ -117,6 +117,7 @@ export default function DashboardPage() {
           <tr className="border-b border-ink-100 text-left text-ink-400">
             <th className="py-2 font-normal">Customer</th>
             <th className="py-2 font-normal">Items</th>
+            <th className="py-2 font-normal">Total</th>
             <th className="py-2 font-normal">Location</th>
             <th className="py-2 font-normal">Status</th>
             <th className="py-2 font-normal"></th>
@@ -128,9 +129,15 @@ export default function DashboardPage() {
               <td className="py-3">
                 <div className="font-medium text-ink-900">{order.customerName}</div>
                 <div className="text-ink-400">{order.phone}</div>
+                {order.specialInstructions && (
+                  <div className="mt-1 text-xs italic text-chili-600">"{order.specialInstructions}"</div>
+                )}
               </td>
               <td className="py-3 text-ink-700">
-                {order.items.map((i) => `${i.quantity}×`).join(", ")}
+                {order.items.map((i) => `${i.quantity}× ${i.menuItem?.name ?? "Item"}`).join(", ")}
+              </td>
+              <td className="py-3 font-medium text-ink-900">
+                ₹{order.items.reduce((sum, i) => sum + Number(i.priceAtOrder) * i.quantity, 0).toFixed(0)}
               </td>
               <td className="py-3 text-ink-700">{order.addressOrFlat}</td>
               <td className="py-3">

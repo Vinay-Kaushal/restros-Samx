@@ -71,8 +71,8 @@ export function TriviaWidget({ restaurantId, mealSlotId, playerName }: Props) {
   if (!question) return null;
 
   return (
-    <div className="mt-8 rounded-card border border-ink-100 p-4">
-      <p className="mb-3 text-sm font-medium text-ink-700">Play while you wait</p>
+    <div className="mt-8 rounded-card border border-turmeric-400/30 bg-turmeric-100/30 p-4">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-turmeric-600">Food Trivia · While you wait</p>
       <p className="mb-3 text-base text-ink-900">{question.question}</p>
       <div className="mb-4 grid grid-cols-2 gap-2">
         {question.options.map((option, i) => {

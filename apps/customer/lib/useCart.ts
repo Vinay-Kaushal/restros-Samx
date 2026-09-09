@@ -45,9 +45,17 @@ export function useCart(restaurantSlug: string) {
     [lines, persist]
   );
 
+  const setQuantity = useCallback(
+    (menuItemId: string, quantity: number) => {
+      if (quantity <= 0) return persist(lines.filter((l) => l.menuItemId !== menuItemId));
+      persist(lines.map((l) => (l.menuItemId === menuItemId ? { ...l, quantity } : l)));
+    },
+    [lines, persist]
+  );
+
   const clear = useCallback(() => persist([]), [persist]);
 
   const total = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
 
-  return { lines, addItem, removeItem, clear, total };
+  return { lines, addItem, removeItem, setQuantity, clear, total };
 }

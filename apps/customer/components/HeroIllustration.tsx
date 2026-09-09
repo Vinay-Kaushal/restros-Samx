@@ -10,13 +10,13 @@ export function HeroIllustration() {
   return (
     <div className="relative h-40 w-40 sm:h-48 sm:w-48">
       <svg viewBox="0 0 200 200" className="h-full w-full">
-        <ellipse cx="100" cy="140" rx="70" ry="14" fill="#241A13" opacity="0.3" />
+        <ellipse cx="100" cy="140" rx="70" ry="14" fill="var(--color-ink-900)" opacity="0.3" />
         <path
           d="M40 100 Q40 150 100 150 Q160 150 160 100 Z"
-          fill="#E3A008"
+          fill="var(--color-turmeric-400)"
         />
-        <ellipse cx="100" cy="100" rx="60" ry="16" fill="#FBE8BE" />
-        <ellipse cx="100" cy="100" rx="60" ry="16" fill="none" stroke="#B77D06" strokeWidth="2" />
+        <ellipse cx="100" cy="100" rx="60" ry="16" fill="var(--color-turmeric-100)" />
+        <ellipse cx="100" cy="100" rx="60" ry="16" fill="none" stroke="var(--color-turmeric-600)" strokeWidth="2" />
       </svg>
 
       {[0, 1, 2].map((i) => (
