@@ -15,11 +15,14 @@ menuRouter.get("/r/:slug/bootstrap", async (req, res) => {
   if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
 
   const rawMealSlots = await prisma.mealSlot.findMany({ where: { restaurantId: restaurant.id } });
-  // DB order isn't guaranteed to be breakfast->lunch->dinner - the landing
-  // page renders these as left-to-right columns, so a stable, predictable
-  // order matters here more than it would for a simple list.
+  // Defends against duplicate rows (e.g. a second "lunch" created by hand in
+  // Prisma Studio during testing) in addition to giving a stable, predictable
+  // left-to-right column order for the landing page.
   const SLOT_ORDER = ["breakfast", "lunch", "dinner"];
-  const mealSlots = [...rawMealSlots].sort((a, b) => SLOT_ORDER.indexOf(a.name) - SLOT_ORDER.indexOf(b.name));
+  const seenNames = new Set<string>();
+  const mealSlots = [...rawMealSlots]
+    .sort((a, b) => SLOT_ORDER.indexOf(a.name) - SLOT_ORDER.indexOf(b.name))
+    .filter((slot) => (seenNames.has(slot.name) ? false : (seenNames.add(slot.name), true)));
   if (mealSlots.length === 0) return res.status(404).json({ error: "No meal slots configured" });
 
   function timeToMinutes(t: string) {
@@ -40,7 +43,7 @@ menuRouter.get("/r/:slug/bootstrap", async (req, res) => {
   const categories = await prisma.menuCategory.findMany({
     where: { restaurantId: restaurant.id },
     orderBy: { sortOrder: "asc" },
-    include: { items: { include: { mealSlots: true } } }
+    include: { items: { where: { isAvailable: true }, include: { mealSlots: true } } }
   });
 
   // An item with no meal-slot assignment at all is treated as available in
@@ -91,11 +94,14 @@ menuRouter.get("/r/:slug/meal-slots", async (req, res) => {
   if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
 
   const rawMealSlots = await prisma.mealSlot.findMany({ where: { restaurantId: restaurant.id } });
-  // DB order isn't guaranteed to be breakfast->lunch->dinner - the landing
-  // page renders these as left-to-right columns, so a stable, predictable
-  // order matters here more than it would for a simple list.
+  // Defends against duplicate rows (e.g. a second "lunch" created by hand in
+  // Prisma Studio during testing) in addition to giving a stable, predictable
+  // left-to-right column order for the landing page.
   const SLOT_ORDER = ["breakfast", "lunch", "dinner"];
-  const mealSlots = [...rawMealSlots].sort((a, b) => SLOT_ORDER.indexOf(a.name) - SLOT_ORDER.indexOf(b.name));
+  const seenNames = new Set<string>();
+  const mealSlots = [...rawMealSlots]
+    .sort((a, b) => SLOT_ORDER.indexOf(a.name) - SLOT_ORDER.indexOf(b.name))
+    .filter((slot) => (seenNames.has(slot.name) ? false : (seenNames.add(slot.name), true)));
   res.json({ mealSlots });
 });
 
@@ -112,7 +118,7 @@ menuRouter.get("/r/:slug/menu", async (req, res) => {
   const categories = await prisma.menuCategory.findMany({
     where: { restaurantId: restaurant.id },
     orderBy: { sortOrder: "asc" },
-    include: { items: { include: { mealSlots: true } } }
+    include: { items: { where: { isAvailable: true }, include: { mealSlots: true } } }
   });
 
   const filterForSlot = (items: (typeof categories)[number]["items"]) =>

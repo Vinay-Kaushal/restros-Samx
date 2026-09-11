@@ -6,7 +6,21 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Mirrors packages/config/tailwind.preset.js */
+/* Sliding banner marquee - plain CSS so it's cheap and won't jank */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 22s linear infinite;
+}
+
+/* Mirrors packages/config/tailwind.preset.js - the single source of truth
+   for the palette. Tailwind utility classes (bg-turmeric-400, etc.) read
+   from that file directly; these custom properties exist so raw SVG
+   fills/strokes and inline gradient styles - which can't use Tailwind
+   classes - pull from the same values instead of duplicating hex codes.
+   If the palette changes, update BOTH this block and the preset file. */
 :root {
   --color-ink-900: #241A13;
   --color-turmeric-100: #FBE8BE;
@@ -15,27 +29,10 @@ html {
   --color-chili-400: #C1451F;
 }
 
-/* Sliding banner marquee - plain CSS so it's cheap and won't jank */
-@keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.animate-marquee {
-  animation: marquee 22s linear infinite;
-}
-
 body {
   @apply bg-ink-50 text-ink-900 font-sans;
 }
 
-h1,
-h2,
-h3 {
+h1, h2, h3 {
   @apply font-display;
 }

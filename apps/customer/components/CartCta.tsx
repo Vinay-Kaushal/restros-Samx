@@ -16,7 +16,7 @@ export function CartCta() {
       onClick={scrollToMenu}
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.97 }}
-      className="group relative mx-auto mt-8 flex items-center gap-4 rounded-card bg-turmeric-400 px-6 py-4 text-left shadow-lg shadow-turmeric-600/20"
+      className="group relative mt-8 flex items-center gap-4 rounded-card bg-turmeric-400 px-6 py-4 text-left shadow-lg shadow-turmeric-600/20"
     >
       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ink-900 text-turmeric-400">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

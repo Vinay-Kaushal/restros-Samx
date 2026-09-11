@@ -13,6 +13,7 @@ import { Logo } from "@/components/Logo";
 import { CartCta } from "@/components/CartCta";
 import { Marquee } from "@/components/Marquee";
 import { AmbientBackdrop } from "@/components/AmbientBackdrop";
+import { HeroIllustration } from "@/components/HeroIllustration";
 import { Button } from "@repo/ui";
 
 interface MealSlot { id: string; name: string; startTime: string; endTime: string; cutoffMinutes: number }
@@ -106,17 +107,41 @@ export default function MenuPage({ params }: { params: { slug: string } }) {
         <AmbientBackdrop />
         <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full opacity-25 blur-3xl" style={{ background: "radial-gradient(circle, var(--color-turmeric-400), transparent 70%)" }} />
         <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle, var(--color-chili-400), transparent 70%)" }} />
-        <div className="relative mx-auto flex max-w-4xl flex-col items-center text-center">
-          <p className="mb-3 text-xs uppercase tracking-[0.2em] text-turmeric-400">Order ahead</p>
-          <h1 className="text-4xl font-display font-semibold sm:text-5xl">{menu.restaurant.name}</h1>
-          <p className="mx-auto mt-3 max-w-md text-base text-ink-100/70">
-            Fresh, made-to-order meals — ready the moment you arrive. No waiting in line.
-          </p>
-          <CartCta />
+        <div className="relative mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-[1.2fr_1fr]">
+          <div className="text-center md:text-left">
+            <p className="mb-3 text-xs uppercase tracking-[0.2em] text-turmeric-400">Order ahead</p>
+            <h1 className="text-4xl font-display font-semibold sm:text-5xl">{menu.restaurant.name}</h1>
+            <p className="mx-auto mt-3 max-w-md text-base text-ink-100/70 md:mx-0">
+              Fresh, made-to-order meals — ready the moment you arrive. No waiting in line.
+            </p>
+            <div className="flex justify-center md:justify-start">
+              <CartCta />
+            </div>
+          </div>
+          <div className="flex justify-center md:justify-end">
+            <HeroIllustration />
+          </div>
         </div>
       </motion.header>
 
       <Marquee items={bannerItems} />
+
+      {trendingNames.length > 0 && (
+        <div className="mx-auto max-w-5xl px-6 pt-8">
+          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-ink-400">Popular right now</p>
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {menu.categories
+              .flatMap((c) => c.items)
+              .filter((i) => (demand[i.id] ?? i.demandCount) > 0)
+              .map((item) => (
+                <div key={item.id} className="shrink-0 rounded-card border border-turmeric-400/30 bg-turmeric-100/30 px-4 py-2 text-sm">
+                  <span className="font-medium text-ink-900">{item.name}</span>
+                  <span className="ml-2 text-xs text-turmeric-600">{demand[item.id] ?? item.demandCount} ordering</span>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
 
       <main id="menu" className="mx-auto max-w-5xl px-6 pb-28 pt-8 scroll-mt-16">
         <input
