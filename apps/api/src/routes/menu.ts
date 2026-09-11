@@ -14,7 +14,12 @@ menuRouter.get("/r/:slug/bootstrap", async (req, res) => {
   const restaurant = await prisma.restaurant.findUnique({ where: { slug } });
   if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
 
-  const mealSlots = await prisma.mealSlot.findMany({ where: { restaurantId: restaurant.id } });
+  const rawMealSlots = await prisma.mealSlot.findMany({ where: { restaurantId: restaurant.id } });
+  // DB order isn't guaranteed to be breakfast->lunch->dinner - the landing
+  // page renders these as left-to-right columns, so a stable, predictable
+  // order matters here more than it would for a simple list.
+  const SLOT_ORDER = ["breakfast", "lunch", "dinner"];
+  const mealSlots = [...rawMealSlots].sort((a, b) => SLOT_ORDER.indexOf(a.name) - SLOT_ORDER.indexOf(b.name));
   if (mealSlots.length === 0) return res.status(404).json({ error: "No meal slots configured" });
 
   function timeToMinutes(t: string) {
@@ -35,14 +40,21 @@ menuRouter.get("/r/:slug/bootstrap", async (req, res) => {
   const categories = await prisma.menuCategory.findMany({
     where: { restaurantId: restaurant.id },
     orderBy: { sortOrder: "asc" },
-    include: { items: true }
+    include: { items: { include: { mealSlots: true } } }
   });
+
+  // An item with no meal-slot assignment at all is treated as available in
+  // every slot (safe default for existing items created before this
+  // relation existed) - only items an admin has explicitly scoped to
+  // specific slots get filtered out of the others.
+  const filterForSlot = (items: (typeof categories)[number]["items"]) =>
+    items.filter((item) => item.mealSlots.length === 0 || item.mealSlots.some((s) => s.id === activeSlot.id));
 
   const withDemand = await Promise.all(
     categories.map(async (category) => ({
       ...category,
       items: await Promise.all(
-        category.items.map(async (item) => {
+        filterForSlot(category.items).map(async (item) => {
           const count = Number((await redis.get(demandKey(restaurant.id, activeSlot.id, item.id))) ?? 0);
           return { ...item, demandCount: count };
         })
@@ -50,7 +62,25 @@ menuRouter.get("/r/:slug/bootstrap", async (req, res) => {
     }))
   );
 
-  res.json({ restaurant, mealSlots, activeSlotId: activeSlot.id, categories: withDemand });
+  // All three slots' menus, pre-filtered, in one response - used by the
+  // landing page's side-by-side breakfast/lunch/dinner layout so it doesn't
+  // need three separate round trips.
+  const bySlot: Record<string, typeof withDemand> = {};
+  for (const slot of mealSlots) {
+    bySlot[slot.id] = await Promise.all(
+      categories.map(async (category) => ({
+        ...category,
+        items: await Promise.all(
+          filterForSlot(category.items).map(async (item) => {
+            const count = Number((await redis.get(demandKey(restaurant.id, slot.id, item.id))) ?? 0);
+            return { ...item, demandCount: count };
+          })
+        )
+      }))
+    );
+  }
+
+  res.json({ restaurant, mealSlots, activeSlotId: activeSlot.id, categories: withDemand, categoriesBySlot: bySlot });
 });
 
 // GET /api/r/:slug/meal-slots - lets the customer app resolve which meal
@@ -60,7 +90,12 @@ menuRouter.get("/r/:slug/meal-slots", async (req, res) => {
   const restaurant = await prisma.restaurant.findUnique({ where: { slug } });
   if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
 
-  const mealSlots = await prisma.mealSlot.findMany({ where: { restaurantId: restaurant.id } });
+  const rawMealSlots = await prisma.mealSlot.findMany({ where: { restaurantId: restaurant.id } });
+  // DB order isn't guaranteed to be breakfast->lunch->dinner - the landing
+  // page renders these as left-to-right columns, so a stable, predictable
+  // order matters here more than it would for a simple list.
+  const SLOT_ORDER = ["breakfast", "lunch", "dinner"];
+  const mealSlots = [...rawMealSlots].sort((a, b) => SLOT_ORDER.indexOf(a.name) - SLOT_ORDER.indexOf(b.name));
   res.json({ mealSlots });
 });
 
@@ -77,14 +112,19 @@ menuRouter.get("/r/:slug/menu", async (req, res) => {
   const categories = await prisma.menuCategory.findMany({
     where: { restaurantId: restaurant.id },
     orderBy: { sortOrder: "asc" },
-    include: { items: true }
+    include: { items: { include: { mealSlots: true } } }
   });
+
+  const filterForSlot = (items: (typeof categories)[number]["items"]) =>
+    mealSlotId
+      ? items.filter((item) => item.mealSlots.length === 0 || item.mealSlots.some((s) => s.id === String(mealSlotId)))
+      : items;
 
   const withDemand = await Promise.all(
     categories.map(async (category) => ({
       ...category,
       items: await Promise.all(
-        category.items.map(async (item) => {
+        filterForSlot(category.items).map(async (item) => {
           const count = mealSlotId
             ? Number((await redis.get(demandKey(restaurant.id, String(mealSlotId), item.id))) ?? 0)
             : 0;

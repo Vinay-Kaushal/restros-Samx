@@ -13,7 +13,7 @@ export function Footer({ restaurantName }: Props) {
   return (
     <footer className="border-t border-ink-100">
       <section id="about" className="border-b border-ink-100 px-6 py-12">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-5xl">
           <p className="mb-2 text-xs uppercase tracking-[0.2em] text-turmeric-600">About us</p>
           <h2 className="mb-3 text-2xl font-display font-semibold text-ink-900">{restaurantName}</h2>
           <p className="max-w-xl text-sm leading-relaxed text-ink-400">
@@ -24,7 +24,7 @@ export function Footer({ restaurantName }: Props) {
       </section>
 
       <section id="help" className="border-b border-ink-100 px-6 py-12">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-5xl">
           <p className="mb-2 text-xs uppercase tracking-[0.2em] text-turmeric-600">Help</p>
           <h2 className="mb-4 text-2xl font-display font-semibold text-ink-900">Frequently asked</h2>
           <div className="space-y-4 text-sm">
@@ -41,7 +41,7 @@ export function Footer({ restaurantName }: Props) {
       </section>
 
       <section id="contact" className="px-6 py-12">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-5xl">
           <p className="mb-2 text-xs uppercase tracking-[0.2em] text-turmeric-600">Contact</p>
           <h2 className="mb-3 text-2xl font-display font-semibold text-ink-900">Get in touch</h2>
           <div className="flex gap-8 text-sm text-ink-400">
@@ -53,7 +53,7 @@ export function Footer({ restaurantName }: Props) {
       </section>
 
       <div className="border-t border-ink-100 px-6 py-6">
-        <div className="mx-auto flex max-w-3xl flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+        <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
           <div className="flex items-center gap-1.5 text-xs text-ink-400">
             <span>Powered by</span>
             <Logo size={14} />

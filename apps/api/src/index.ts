@@ -8,6 +8,7 @@ import { ordersRouter } from "./routes/orders";
 import { paymentsRouter } from "./routes/payments";
 import { triviaRouter } from "./routes/trivia";
 import { statsRouter } from "./routes/stats";
+import { adminMenuRouter } from "./routes/adminMenu";
 import { attachWebSocketServer } from "./realtime/ws";
 import { scheduleRecurringJobs } from "./jobs/queue";
 
@@ -46,6 +47,7 @@ app.use("/api", ordersRouter);
 app.use("/api", paymentsRouter);
 app.use("/api", triviaRouter);
 app.use("/api", statsRouter);
+app.use("/api", adminMenuRouter);
 
 const server = createServer(app);
 attachWebSocketServer(server);

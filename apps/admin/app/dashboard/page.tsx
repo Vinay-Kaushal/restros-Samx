@@ -97,6 +97,9 @@ export default function DashboardPage() {
           View stats →
         </a>
       </div>
+      <div className="mb-2">
+        <a href="/dashboard/menu" className="text-sm font-medium text-chili-600">Manage menu →</a>
+      </div>
 
       <div className="mb-4 flex gap-2">
         {STATUS_FILTERS.map((s) => (

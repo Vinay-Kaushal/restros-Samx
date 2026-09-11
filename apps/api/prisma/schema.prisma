@@ -47,6 +47,7 @@ model Restaurant {
 }
 
 model MealSlot {
+  categories     MenuCategory[]
   id             String   @id @default(cuid())
   restaurantId   String
   restaurant     Restaurant @relation(fields: [restaurantId], references: [id])
@@ -56,6 +57,7 @@ model MealSlot {
   cutoffMinutes  Int      @default(60)
 
   orders         Order[]
+  menuItems      MenuItem[] @relation("MenuItemMealSlots")
 
   @@index([restaurantId])
 }
@@ -79,6 +81,13 @@ model MenuCategory {
   name         String
   sortOrder    Int      @default(0)
 
+  // Null = shown under every meal slot. Set = only shown when that slot is
+  // active (e.g. a "Breakfast Specials" category that shouldn't appear at
+  // dinner). This is what makes "breakfast tab shows only breakfast items"
+  // actually true instead of every item existing under every tab.
+  mealSlotId   String?
+  mealSlot     MealSlot? @relation(fields: [mealSlotId], references: [id])
+
   items        MenuItem[]
 
   @@index([restaurantId])
@@ -95,6 +104,7 @@ model MenuItem {
   imageUrl     String?
 
   orderItems   OrderItem[]
+  mealSlots    MealSlot[] @relation("MenuItemMealSlots")
 
   @@index([categoryId])
 }
